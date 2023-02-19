@@ -1,55 +1,90 @@
 #include <iostream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <fstream>
+#include <cstring>
 
 using namespace std;
 
-void read_data()
-{
-    int programmerArray[5][5];
-    int departmentArray[5][5];
+const int numProgrammers = 5;
+const int numDepartments = 5;
 
-    ofstream inputFile;
-    inputFile.open("inputFile.txt");
-    if(inputFile.is_open())
-    {
-        for(int i=0; i<=4; i++)
-        {
-            for(int j=0; j<=4; j++)
-            {
-                cin >> departmentArray[j][i];
+int programmers[numProgrammers][5] = {
+    {3,1,2,5,4},
+    {4,3,1,5,2},
+    {2,5,4,1,3},
+    {4,5,2,1,3},
+    {3,2,1,5,4}
+};
+
+int departments[numDepartments][5] = {
+    {1,5,3,2,4},
+    {1,3,4,2,5},
+    {3,4,2,5,1},
+    {3,1,2,4,5},
+    {4,3,1,2,5}
+};
+
+int programmerAssigned[numProgrammers];
+bool departmentAssigned[numDepartments];
+
+void algorithm(){
+    memset(programmerAssigned, -1, sizeof(programmerAssigned));
+    memset(departmentAssigned, false, sizeof(departmentAssigned));
+    
+    while(true){
+        int freeProgrammer = -1;
+        for(int i=0;i<numProgrammers;i++){
+            if(programmerAssigned[i] == -1){
+                freeProgrammer = i;
+                break;
             }
         }
-
-        for(int i=0; i<=4; i++)
-        {
-            for(int j=0; j<=4; j++)
-            {
-                cin >> programmerArray[j+5][i];
+        if(freeProgrammer == -1){
+            break;
+        }
+        
+        for(int i=0;i<5;i++){
+            int preferredDepartment = programmers[freeProgrammer][i];
+            if(!departmentAssigned[preferredDepartment]){
+                programmerAssigned[freeProgrammer] = preferredDepartment;
+                departmentAssigned[preferredDepartment] = true;
+                break;
+            }
+            else{
+                int currentProgrammer = -1;
+                for(int j=0;j<numProgrammers;j++){
+                    if(programmerAssigned[j] == preferredDepartment){
+                        currentProgrammer = j;
+                        break;
+                    }
+                }
+                int rankOfCurrent = -1;
+                int rankOfFree = -1;
+                for(int j=0;j<5;j++){
+                    if(departments[preferredDepartment][j] == freeProgrammer){
+                        rankOfFree = j;
+                    }
+                    if(departments[preferredDepartment][j] == currentProgrammer){
+                        rankOfCurrent = j;
+                    }
+                }
+                if(rankOfFree < rankOfCurrent){
+                    programmerAssigned[freeProgrammer] = preferredDepartment;
+                    programmerAssigned[currentProgrammer] = -1;
+                    break;
+                }
             }
         }
-
-//----------------------------------------
-        for(int a = 0; a < 3; a++)
-        {
-            for(int b = 0; b < 3; b++)
-            {
-                cout << departmentArray[a][b] << " ";
-            }
-            cout << endl;
-        }
-//--------------------------------------
-        inputFile.close();
-    }
-    else
-    {   
-        cout << "Unable to open file" << endl;
     }
 }
 
-int main()
-{
-    read_data();
+int main(){
+    algorithm();
+    for(int i=0;i<numDepartments;i++){
+        cout<<"Department #"<<i+1<<" will get Programmer #";
+        for(int j=0;j<numProgrammers;j++){
+            if(programmerAssigned[j] == i){
+                cout<<j+1<<endl;
+            }
+        }
+    }
     return 0;
 }
