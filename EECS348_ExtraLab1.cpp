@@ -1,90 +1,91 @@
 #include <iostream>
-#include <cstring>
+#include <vector>
+#include <algorithm>
+#include <fstream>
+#include <string>
+#include <sstream>
 
 using namespace std;
 
-const int numProgrammers = 5;
-const int numDepartments = 5;
+// Define the preferences for each department
+const int DEPT_COUNT = 5;
+const int PROG_COUNT = 5;
 
-int programmers[numProgrammers][5] = {
-    {3,1,2,5,4},
-    {4,3,1,5,2},
-    {2,5,4,1,3},
-    {4,5,2,1,3},
-    {3,2,1,5,4}
-};
+// read file (first 5 rows are preferences of department, next 5 are programmer preferences)
+void read_file(string filename, int dept_prefs[5][5], int prog_prefs[5][5])
+{
+    ifstream file(filename); 
+    string line; // each line is a string
 
-int departments[numDepartments][5] = {
-    {1,5,3,2,4},
-    {1,3,4,2,5},
-    {3,4,2,5,1},
-    {3,1,2,4,5},
-    {4,3,1,2,5}
-};
+    for (int i = 0; i < 10; i++) 
+    {
+        getline(file, line); // get the line
+        stringstream ss(line); // read line
 
-int programmerAssigned[numProgrammers];
-bool departmentAssigned[numDepartments];
-
-void algorithm(){
-    memset(programmerAssigned, -1, sizeof(programmerAssigned));
-    memset(departmentAssigned, false, sizeof(departmentAssigned));
-    
-    while(true){
-        int freeProgrammer = -1;
-        for(int i=0;i<numProgrammers;i++){
-            if(programmerAssigned[i] == -1){
-                freeProgrammer = i;
-                break;
-            }
-        }
-        if(freeProgrammer == -1){
-            break;
-        }
-        
-        for(int i=0;i<5;i++){
-            int preferredDepartment = programmers[freeProgrammer][i];
-            if(!departmentAssigned[preferredDepartment]){
-                programmerAssigned[freeProgrammer] = preferredDepartment;
-                departmentAssigned[preferredDepartment] = true;
-                break;
-            }
-            else{
-                int currentProgrammer = -1;
-                for(int j=0;j<numProgrammers;j++){
-                    if(programmerAssigned[j] == preferredDepartment){
-                        currentProgrammer = j;
-                        break;
-                    }
-                }
-                int rankOfCurrent = -1;
-                int rankOfFree = -1;
-                for(int j=0;j<5;j++){
-                    if(departments[preferredDepartment][j] == freeProgrammer){
-                        rankOfFree = j;
-                    }
-                    if(departments[preferredDepartment][j] == currentProgrammer){
-                        rankOfCurrent = j;
-                    }
-                }
-                if(rankOfFree < rankOfCurrent){
-                    programmerAssigned[freeProgrammer] = preferredDepartment;
-                    programmerAssigned[currentProgrammer] = -1;
-                    break;
-                }
+        for (int j = 0; j < 5; j++) 
+        { // nested loop from 0->5
+            int val;
+            ss >> val;
+            if (i < 5)
+            {
+                dept_prefs[i][j] = val; // add values to department preference array
+            } else
+            {
+                prog_prefs[i-5][j] = val; // add values to programmer preference array
             }
         }
     }
 }
 
-int main(){
-    algorithm();
-    for(int i=0;i<numDepartments;i++){
-        cout<<"Department #"<<i+1<<" will get Programmer #";
-        for(int j=0;j<numProgrammers;j++){
-            if(programmerAssigned[j] == i){
-                cout<<j+1<<endl;
+
+int main() 
+{
+    int dept_prefs[DEPT_COUNT][PROG_COUNT];  // initialize department and programmer preferences
+    int prog_prefs[PROG_COUNT][DEPT_COUNT];
+    read_file("matching-data.txt", dept_prefs, prog_prefs); // read file and load preferences
+
+    vector<int> assigned_prog(5, 0); // create vectors
+    vector<int> assigned_dept(5, -1);
+
+    for (int i = 0; i < 5; i++) 
+    {
+        // Find the first programmer in the department's preferences who hasn't been assigned
+        int prog = -1;
+        for (int j = 0; j < 5; j++) 
+        {
+            int preferred_prog = dept_prefs[i][j];
+            if (assigned_prog[preferred_prog-1] == 0) 
+            {
+                prog = preferred_prog;
+                break;
             }
         }
+
+        // If no unassigned programmer is found, look for a preferred assigned programmer
+        if (prog == -1) 
+        {
+            for (int j = 0; j < 5; j++) 
+            {
+                int preferred_prog = dept_prefs[i][j];
+                int curr_dept = assigned_dept[preferred_prog-1];
+                if (curr_dept != -1 && prog_prefs[preferred_prog-1][i] < prog_prefs[preferred_prog-1][curr_dept-1]) 
+                {
+                    assigned_dept[curr_dept-1] = -1;
+                    prog = preferred_prog;
+                    break;
+                }
+            }
+        }
+
+        // Assign the programmer to the department
+        assigned_prog[prog-1] = 1;
+        assigned_dept[i] = prog;
+    }
+    
+   
+    for (int i = 0; i < DEPT_COUNT; i++) 
+    {
+        cout << "Department #" << i+1 << " is assigned Programmer #" << assigned_dept[i] << endl;
     }
     return 0;
 }
